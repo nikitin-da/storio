@@ -340,24 +340,4 @@ public class PreparedDeleteByQueryTest {
 
         schedulerChecker.checkAsCompletable(operation);
     }
-
-    @Test
-    public void createObservableReturnsAsRxObservable() {
-        final DeleteByQueryStub stub = new DeleteByQueryStub();
-
-        PreparedDeleteByQuery preparedOperation =
-                spy(new PreparedDeleteByQuery.Builder(stub.storIOSQLite, stub.deleteQuery)
-                        .withDeleteResolver(stub.deleteResolver)
-                        .prepare());
-
-        Observable<DeleteResult> observable = Observable.just(DeleteResult.newInstance(1, TestItem.TABLE));
-        //noinspection CheckResult
-        doReturn(observable).when(preparedOperation).asRxObservable();
-
-        //noinspection deprecation
-        assertThat(preparedOperation.createObservable()).isEqualTo(observable);
-
-        //noinspection CheckResult
-        verify(preparedOperation).asRxObservable();
-    }
 }

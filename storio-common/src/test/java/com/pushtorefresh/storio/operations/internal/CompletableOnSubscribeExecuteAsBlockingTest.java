@@ -5,39 +5,35 @@ import com.pushtorefresh.storio.operations.PreparedWriteOperation;
 
 import org.junit.Test;
 
-import rx.Completable;
-import rx.observers.TestSubscriber;
+import io.reactivex.Completable;
+import io.reactivex.observers.TestObserver;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class OnSubscribeExecuteAsBlockingCompletableTest {
+public class CompletableOnSubscribeExecuteAsBlockingTest {
 
     @SuppressWarnings("ResourceType")
     @Test
     public void shouldExecuteAsBlockingAfterSubscription() {
         final PreparedWriteOperation preparedOperation = mock(PreparedWriteOperation.class);
 
-        TestSubscriber testSubscriber = new TestSubscriber();
+        TestObserver testObserver = new TestObserver();
 
         verifyZeroInteractions(preparedOperation);
 
-        Completable completable = Completable.create(OnSubscribeExecuteAsBlockingCompletable.newInstance(preparedOperation));
+        Completable completable = Completable.create(new CompletableOnSubscribeExecuteAsBlocking(preparedOperation));
 
         verifyZeroInteractions(preparedOperation);
 
-        completable.subscribe(testSubscriber);
+        completable.subscribe(testObserver);
 
-        testSubscriber.assertNoErrors();
-        testSubscriber.assertCompleted();
+        testObserver.assertNoErrors();
+        testObserver.assertComplete();
 
         verify(preparedOperation).executeAsBlocking();
-        verify(preparedOperation, never()).asRxObservable();
-        verify(preparedOperation, never()).asRxSingle();
-        verify(preparedOperation, never()).asRxCompletable();
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown", "ResourceType"})
@@ -49,20 +45,17 @@ public class OnSubscribeExecuteAsBlockingCompletableTest {
 
         when(preparedOperation.executeAsBlocking()).thenThrow(expectedException);
 
-        TestSubscriber testSubscriber = new TestSubscriber();
+        TestObserver testObserver = new TestObserver();
 
-        Completable completable = Completable.create(OnSubscribeExecuteAsBlockingCompletable.newInstance(preparedOperation));
+        Completable completable = Completable.create(new CompletableOnSubscribeExecuteAsBlocking(preparedOperation));
 
         verifyZeroInteractions(preparedOperation);
 
-        completable.subscribe(testSubscriber);
+        completable.subscribe(testObserver);
 
-        testSubscriber.assertError(expectedException);
-        testSubscriber.assertTerminalEvent();
+        testObserver.assertError(expectedException);
+        testObserver.assertNotComplete();
 
         verify(preparedOperation).executeAsBlocking();
-        verify(preparedOperation, never()).asRxObservable();
-        verify(preparedOperation, never()).asRxSingle();
-        verify(preparedOperation, never()).asRxCompletable();
     }
 }

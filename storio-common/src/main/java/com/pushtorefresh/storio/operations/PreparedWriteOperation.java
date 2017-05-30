@@ -3,7 +3,7 @@ package com.pushtorefresh.storio.operations;
 import android.support.annotation.CheckResult;
 import android.support.annotation.NonNull;
 
-import rx.Completable;
+import io.reactivex.Completable;
 
 /**
  * Common API of prepared write operations

@@ -4,17 +4,18 @@ import android.support.annotation.CheckResult;
 import android.support.annotation.NonNull;
 
 import com.pushtorefresh.storio.operations.PreparedOperation;
-import com.pushtorefresh.storio.operations.internal.OnSubscribeExecuteAsBlocking;
-import com.pushtorefresh.storio.operations.internal.OnSubscribeExecuteAsBlockingCompletable;
-import com.pushtorefresh.storio.operations.internal.OnSubscribeExecuteAsBlockingSingle;
+import com.pushtorefresh.storio.operations.internal.CompletableOnSubscribeExecuteAsBlocking;
+import com.pushtorefresh.storio.operations.internal.FlowableOnSubscribeExecuteAsBlocking;
+import com.pushtorefresh.storio.operations.internal.SingleOnSubscribeExecuteAsBlocking;
 import com.pushtorefresh.storio.sqlite.StorIOSQLite;
 
-import rx.Completable;
-import rx.Observable;
-import rx.Scheduler;
-import rx.Single;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Completable;
+import io.reactivex.Flowable;
+import io.reactivex.Scheduler;
+import io.reactivex.Single;
 
-import static com.pushtorefresh.storio.internal.Environment.throwExceptionIfRxJavaIsNotAvailable;
+import static com.pushtorefresh.storio.internal.Environment.throwExceptionIfRxJava2IsNotAvailable;
 
 public final class RxJavaUtils {
 
@@ -24,16 +25,17 @@ public final class RxJavaUtils {
 
     @CheckResult
     @NonNull
-    public static <T> Observable<T> createObservable(
+    public static <T> Flowable<T> createFlowable(
             @NonNull StorIOSQLite storIOSQLite,
-            @NonNull PreparedOperation<T> operation
+            @NonNull PreparedOperation<T> operation,
+            @NonNull BackpressureStrategy backpressureStrategy
     ) {
-        throwExceptionIfRxJavaIsNotAvailable("asRxObservable()");
+        throwExceptionIfRxJava2IsNotAvailable("asRxObservable()");
 
-        final Observable<T> observable =
-                Observable.create(OnSubscribeExecuteAsBlocking.newInstance(operation));
-
-        return subscribeOn(storIOSQLite, observable);
+        return subscribeOn(
+                storIOSQLite,
+                Flowable.create(new FlowableOnSubscribeExecuteAsBlocking<T>(operation), backpressureStrategy)
+        );
     }
 
     @CheckResult
@@ -42,10 +44,10 @@ public final class RxJavaUtils {
             @NonNull StorIOSQLite storIOSQLite,
             @NonNull PreparedOperation<T> operation
     ) {
-        throwExceptionIfRxJavaIsNotAvailable("asRxSingle()");
+        throwExceptionIfRxJava2IsNotAvailable("asRxSingle()");
 
         final Single<T> single =
-                Single.create(OnSubscribeExecuteAsBlockingSingle.newInstance(operation));
+                Single.create(new SingleOnSubscribeExecuteAsBlocking<T>(operation));
 
         return subscribeOn(storIOSQLite, single);
     }
@@ -56,22 +58,22 @@ public final class RxJavaUtils {
             @NonNull StorIOSQLite storIOSQLite,
             @NonNull PreparedOperation<T> operation
     ) {
-        throwExceptionIfRxJavaIsNotAvailable("asRxCompletable()");
+        throwExceptionIfRxJava2IsNotAvailable("asRxCompletable()");
 
         final Completable completable =
-                Completable.create(OnSubscribeExecuteAsBlockingCompletable.newInstance(operation));
+                Completable.create(new CompletableOnSubscribeExecuteAsBlocking(operation));
 
         return subscribeOn(storIOSQLite, completable);
     }
 
     @CheckResult
     @NonNull
-    public static <T> Observable<T> subscribeOn(
+    public static <T> Flowable<T> subscribeOn(
             @NonNull StorIOSQLite storIOSQLite,
-            @NonNull Observable<T> observable
+            @NonNull Flowable<T> flowable
     ) {
-        final Scheduler scheduler = storIOSQLite.defaultScheduler();
-        return scheduler != null ? observable.subscribeOn(scheduler) : observable;
+        final Scheduler scheduler = storIOSQLite.defaultRxScheduler();
+        return scheduler != null ? flowable.subscribeOn(scheduler) : flowable;
     }
 
     @CheckResult
@@ -80,7 +82,7 @@ public final class RxJavaUtils {
             @NonNull StorIOSQLite storIOSQLite,
             @NonNull Single<T> single
     ) {
-        final Scheduler scheduler = storIOSQLite.defaultScheduler();
+        final Scheduler scheduler = storIOSQLite.defaultRxScheduler();
         return scheduler != null ? single.subscribeOn(scheduler) : single;
     }
 
@@ -90,7 +92,7 @@ public final class RxJavaUtils {
             @NonNull StorIOSQLite storIOSQLite,
             @NonNull Completable completable
     ) {
-        final Scheduler scheduler = storIOSQLite.defaultScheduler();
+        final Scheduler scheduler = storIOSQLite.defaultRxScheduler();
         return scheduler != null ? completable.subscribeOn(scheduler) : completable;
     }
 }

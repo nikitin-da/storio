@@ -834,28 +834,5 @@ public class PreparedDeleteCollectionOfObjectsTest {
 
             schedulerChecker.checkAsCompletable(operation);
         }
-
-        @Test
-        public void createObservableReturnsAsRxObservable() {
-            final DeleteStub deleteStub
-                    = DeleteStub.newStubForMultipleObjectsWithTypeMappingWithoutTransaction();
-
-            PreparedDeleteCollectionOfObjects<TestItem> preparedOperation = spy(deleteStub.storIOSQLite
-                    .delete()
-                    .objects(deleteStub.itemsRequestedForDelete)
-                    .prepare());
-
-            Observable<DeleteResults<Object>> observable =
-                    Observable.just(DeleteResults.newInstance(Collections.<Object, DeleteResult>emptyMap()));
-
-            //noinspection CheckResult
-            doReturn(observable).when(preparedOperation).asRxObservable();
-
-            //noinspection deprecation
-            assertThat(preparedOperation.createObservable()).isEqualTo(observable);
-
-            //noinspection CheckResult
-            verify(preparedOperation).asRxObservable();
-        }
     }
 }

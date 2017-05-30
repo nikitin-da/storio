@@ -289,27 +289,4 @@ public class PreparedGetNumberOfResultsTest {
 
         schedulerChecker.checkAsSingle(operation);
     }
-
-    @Test
-    public void createObservableReturnsAsRxObservable() {
-        final GetNumberOfResultsStub getStub = GetNumberOfResultsStub.newInstance();
-
-        PreparedGetNumberOfResults preparedOperation = spy(getStub.storIOSQLite
-                .get()
-                .numberOfResults()
-                .withQuery(getStub.query)
-                .withGetResolver(getStub.getResolverForNumberOfResults)
-                .prepare());
-
-        Observable<Integer> observable = Observable.just(0);
-
-        //noinspection CheckResult
-        doReturn(observable).when(preparedOperation).asRxObservable();
-
-        //noinspection deprecation
-        assertThat(preparedOperation.createObservable()).isEqualTo(observable);
-
-        //noinspection CheckResult
-        verify(preparedOperation).asRxObservable();
-    }
 }

@@ -235,26 +235,6 @@ public class PreparedExecuteSQLTest {
         verifyNoMoreInteractions(stub.storIOSQLite, stub.lowLevel);
     }
 
-    @Test
-    public void createObservableReturnsAsRxObservable() {
-        final Stub stub = Stub.newInstanceWithoutNotification();
-
-        PreparedExecuteSQL preparedExecuteSQL = spy(stub.storIOSQLite
-                .executeSQL()
-                .withQuery(stub.rawQuery)
-                .prepare());
-
-        Observable<Object> observable = Observable.just(new Object());
-        //noinspection CheckResult
-        doReturn(observable).when(preparedExecuteSQL).asRxObservable();
-
-        //noinspection deprecation
-        assertThat(preparedExecuteSQL.createObservable()).isEqualTo(observable);
-
-        //noinspection CheckResult
-        verify(preparedExecuteSQL).asRxObservable();
-    }
-
     static class Stub {
 
         private final StorIOSQLite storIOSQLite;

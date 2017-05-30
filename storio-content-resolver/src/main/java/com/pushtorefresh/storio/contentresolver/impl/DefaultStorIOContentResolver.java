@@ -32,7 +32,7 @@ import rx.schedulers.Schedulers;
 
 import static com.pushtorefresh.storio.internal.Checks.checkNotNull;
 import static com.pushtorefresh.storio.internal.Environment.RX_JAVA_IS_IN_THE_CLASS_PATH;
-import static com.pushtorefresh.storio.internal.Environment.throwExceptionIfRxJavaIsNotAvailable;
+import static com.pushtorefresh.storio.internal.Environment.throwExceptionIfRxJava2IsNotAvailable;
 import static com.pushtorefresh.storio.internal.InternalQueries.nullableArrayOfStringsFromListOfStrings;
 import static com.pushtorefresh.storio.internal.InternalQueries.nullableString;
 import static java.util.Collections.unmodifiableMap;
@@ -72,7 +72,7 @@ public class DefaultStorIOContentResolver extends StorIOContentResolver {
     @NonNull
     @Override
     public Observable<Changes> observeChangesOfUris(@NonNull final Set<Uri> uris) {
-        throwExceptionIfRxJavaIsNotAvailable("Observing changes in StorIOContentProvider");
+        throwExceptionIfRxJava2IsNotAvailable("Observing changes in StorIOContentProvider");
 
         // indirect usage of RxJava
         // required to avoid problems with ClassLoader when RxJava is not in ClassPath

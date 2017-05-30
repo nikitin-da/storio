@@ -210,26 +210,4 @@ public class PreparedPutContentValuesTest {
         verify(stub.storIOSQLite).defaultScheduler();
         verifyNoMoreInteractions(stub.storIOSQLite, stub.lowLevel);
     }
-
-    @Test
-    public void createObservableReturnsAsRxObservable() {
-        final PutContentValuesStub putStub = PutContentValuesStub.newPutStubForOneContentValues();
-
-        PreparedPutContentValues preparedOperation = spy(putStub.storIOSQLite
-                .put()
-                .contentValues(putStub.contentValues.get(0))
-                .withPutResolver(putStub.putResolver)
-                .prepare());
-
-        Observable<PutResult> observable = Observable.just(PutResult.newInsertResult(1, TestItem.TABLE));
-
-        //noinspection CheckResult
-        doReturn(observable).when(preparedOperation).asRxObservable();
-
-        //noinspection deprecation
-        assertThat(preparedOperation.createObservable()).isEqualTo(observable);
-
-        //noinspection CheckResult
-        verify(preparedOperation).asRxObservable();
-    }
 }

@@ -13,8 +13,9 @@ import com.pushtorefresh.storio.sqlite.queries.RawQuery;
 
 import java.util.Set;
 
-import rx.Observable;
-import rx.Single;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+import io.reactivex.Single;
 
 import static com.pushtorefresh.storio.internal.Checks.checkNotNull;
 
@@ -67,44 +68,18 @@ public class PreparedExecuteSQL implements PreparedOperation<Object> {
     }
 
     /**
-     * Creates {@link Observable} which will perform Execute SQL Operation
+     * Creates {@link Flowable} which will perform Execute SQL Operation
      * and send result to observer.
      * <p>
-     * Returned {@link Observable} will be "Cold Observable", which means that it performs
+     * Returned {@link Flowable} will be "Cold Flowable", which means that it performs
      * execution of SQL only after subscribing to it. Also, it emits the result once.
      * <p>
      * <dl>
      * <dt><b>Scheduler:</b></dt>
-     * <dd>Operates on {@link StorIOSQLite#defaultScheduler()} if not {@code null}.</dd>
+     * <dd>Operates on {@link StorIOSQLite#defaultRxScheduler()} if not {@code null}.</dd>
      * </dl>
      *
-     * @return non-null {@link Observable} which will perform Delete Operation
-     * and send result to observer. Result: just a new instance of {@link Object},
-     * actually Execute SQL should return {@code void},
-     * but we can not return instance of {@link Void} so we just return {@link Object}
-     * and you don't have to deal with {@code null}.
-     * @deprecated (will be removed in 2.0) please use {@link #asRxObservable()}.
-     */
-    @NonNull
-    @CheckResult
-    @Override
-    public Observable<Object> createObservable() {
-        return asRxObservable();
-    }
-
-    /**
-     * Creates {@link Observable} which will perform Execute SQL Operation
-     * and send result to observer.
-     * <p>
-     * Returned {@link Observable} will be "Cold Observable", which means that it performs
-     * execution of SQL only after subscribing to it. Also, it emits the result once.
-     * <p>
-     * <dl>
-     * <dt><b>Scheduler:</b></dt>
-     * <dd>Operates on {@link StorIOSQLite#defaultScheduler()} if not {@code null}.</dd>
-     * </dl>
-     *
-     * @return non-null {@link Observable} which will perform Delete Operation
+     * @return non-null {@link Flowable} which will perform Delete Operation
      * and send result to observer. Result: just a new instance of {@link Object},
      * actually Execute SQL should return {@code void},
      * but we can not return instance of {@link Void} so we just return {@link Object}
@@ -113,15 +88,15 @@ public class PreparedExecuteSQL implements PreparedOperation<Object> {
     @NonNull
     @CheckResult
     @Override
-    public Observable<Object> asRxObservable() {
-        return RxJavaUtils.createObservable(storIOSQLite, this);
+    public Flowable<Object> asRxFlowable(@NonNull BackpressureStrategy backpressureStrategy) {
+        return RxJavaUtils.createFlowable(storIOSQLite, this, backpressureStrategy);
     }
 
     /**
      * Creates {@link Single} which will perform Execute SQL Operation lazily when somebody subscribes to it and send result to observer.
      * <dl>
      * <dt><b>Scheduler:</b></dt>
-     * <dd>Operates on {@link StorIOSQLite#defaultScheduler()} if not {@code null}.</dd>
+     * <dd>Operates on {@link StorIOSQLite#defaultRxScheduler()} if not {@code null}.</dd>
      * </dl>
      *
      * @return non-null {@link Single} which will perform Execute SQL Operation.

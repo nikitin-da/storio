@@ -958,29 +958,5 @@ public class PreparedPutCollectionOfObjectsTest {
 
             schedulerChecker.checkAsCompletable(operation);
         }
-
-        @Test
-        public void createObservableReturnsAsRxObservable() {
-            final PutObjectsStub putStub
-                    = PutObjectsStub.newPutStubForMultipleObjectsWithTypeMappingWithTransaction();
-
-            PreparedPutCollectionOfObjects<TestItem> preparedOperation = spy(putStub.storIOSQLite
-                    .put()
-                    .objects(putStub.items)
-                    .useTransaction(true)
-                    .prepare());
-
-            Observable<PutResults<TestItem>> observable =
-                    Observable.just(PutResults.newInstance(Collections.<TestItem, PutResult>emptyMap()));
-
-            //noinspection CheckResult
-            doReturn(observable).when(preparedOperation).asRxObservable();
-
-            //noinspection deprecation
-            assertThat(preparedOperation.createObservable()).isEqualTo(observable);
-
-            //noinspection CheckResult
-            verify(preparedOperation).asRxObservable();
-        }
     }
 }

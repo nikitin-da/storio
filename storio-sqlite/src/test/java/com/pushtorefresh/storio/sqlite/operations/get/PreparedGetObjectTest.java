@@ -697,27 +697,5 @@ public class PreparedGetObjectTest {
 
             schedulerChecker.checkAsSingle(operation);
         }
-
-        @Test
-        public void createObservableReturnsAsRxObservable() {
-            final GetObjectStub getStub = GetObjectStub.newInstanceWithTypeMapping();
-
-            PreparedGetObject<TestItem> preparedOperation = spy(getStub.storIOSQLite
-                    .get()
-                    .object(TestItem.class)
-                    .withQuery(getStub.query)
-                    .prepare());
-
-            Observable<TestItem> observable = Observable.just(new TestItem());
-
-            //noinspection CheckResult
-            doReturn(observable).when(preparedOperation).asRxObservable();
-
-            //noinspection deprecation
-            assertThat(preparedOperation.createObservable()).isEqualTo(observable);
-
-            //noinspection CheckResult
-            verify(preparedOperation).asRxObservable();
-        }
     }
 }

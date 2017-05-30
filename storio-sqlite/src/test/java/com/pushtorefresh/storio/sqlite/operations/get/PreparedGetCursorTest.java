@@ -275,27 +275,4 @@ public class PreparedGetCursorTest {
 
         schedulerChecker.checkAsSingle(operation);
     }
-
-    @Test
-    public void createObservableReturnsAsRxObservable() {
-        final GetCursorStub getStub = GetCursorStub.newInstance();
-
-        PreparedGetCursor preparedOperation = spy(getStub.storIOSQLite
-                .get()
-                .cursor()
-                .withQuery(getStub.query)
-                .withGetResolver(getStub.getResolverForCursor)
-                .prepare());
-
-        Observable<Cursor> observable = Observable.just(mock(Cursor.class));
-
-        //noinspection CheckResult
-        doReturn(observable).when(preparedOperation).asRxObservable();
-
-        //noinspection deprecation
-        assertThat(preparedOperation.createObservable()).isEqualTo(observable);
-
-        //noinspection CheckResult
-        verify(preparedOperation).asRxObservable();
-    }
 }

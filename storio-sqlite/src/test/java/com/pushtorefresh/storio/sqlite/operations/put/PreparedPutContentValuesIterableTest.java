@@ -657,28 +657,4 @@ public class PreparedPutContentValuesIterableTest {
         verify(stub.storIOSQLite).defaultScheduler();
         verifyNoMoreInteractions(stub.storIOSQLite, stub.lowLevel);
     }
-
-    @Test
-    public void createObservableReturnsAsRxObservable() {
-        final PutContentValuesStub putStub = PutContentValuesStub.newPutStubForMultipleContentValues(true);
-
-        PreparedPutContentValuesIterable preparedOperation = spy(putStub.storIOSQLite
-                .put()
-                .contentValues(putStub.contentValues)
-                .withPutResolver(putStub.putResolver)
-                .useTransaction(true)
-                .prepare());
-
-        Observable<PutResults<ContentValues>> observable =
-                Observable.just(PutResults.newInstance(Collections.<ContentValues, PutResult>emptyMap()));
-
-        //noinspection CheckResult
-        doReturn(observable).when(preparedOperation).asRxObservable();
-
-        //noinspection deprecation
-        assertThat(preparedOperation.createObservable()).isEqualTo(observable);
-
-        //noinspection CheckResult
-        verify(preparedOperation).asRxObservable();
-    }
 }
