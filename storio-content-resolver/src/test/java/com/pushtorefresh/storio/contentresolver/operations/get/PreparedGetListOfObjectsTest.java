@@ -15,12 +15,15 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
-import rx.Observable;
-import rx.Single;
-import rx.observers.TestSubscriber;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+import io.reactivex.Single;
+import io.reactivex.observers.TestObserver;
+import io.reactivex.subscribers.TestSubscriber;
 
-import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -49,19 +52,19 @@ public class PreparedGetListOfObjectsTest {
         }
 
         @Test
-        public void shouldGetListOfObjectsWithoutTypeMappingAsObservable() {
+        public void shouldGetListOfObjectsWithoutTypeMappingAsFlowable() {
             final GetObjectsStub getStub = GetObjectsStub.newStubWithoutTypeMapping();
 
-            final Observable<List<TestItem>> testItemsObservable = getStub.storIOContentResolver
+            final Flowable<List<TestItem>> testItemsFlowable = getStub.storIOContentResolver
                     .get()
                     .listOfObjects(TestItem.class)
                     .withQuery(getStub.query)
                     .withGetResolver(getStub.getResolver)
                     .prepare()
-                    .asRxObservable()
+                    .asRxFlowable(BackpressureStrategy.MISSING)
                     .take(1);
 
-            getStub.verifyBehavior(testItemsObservable);
+            getStub.verifyBehavior(testItemsFlowable);
         }
 
         @Test
@@ -97,18 +100,18 @@ public class PreparedGetListOfObjectsTest {
         }
 
         @Test
-        public void shouldGetListOfObjectsWithTypeMappingAsObservable() {
+        public void shouldGetListOfObjectsWithTypeMappingAsFlowable() {
             final GetObjectsStub getStub = GetObjectsStub.newStubWithTypeMapping();
 
-            final Observable<List<TestItem>> testItemsObservable = getStub.storIOContentResolver
+            final Flowable<List<TestItem>> testItemsFlowable = getStub.storIOContentResolver
                     .get()
                     .listOfObjects(TestItem.class)
                     .withQuery(getStub.query)
                     .prepare()
-                    .asRxObservable()
+                    .asRxFlowable(BackpressureStrategy.MISSING)
                     .take(1);
 
-            getStub.verifyBehavior(testItemsObservable);
+            getStub.verifyBehavior(testItemsFlowable);
         }
 
         @Test
@@ -159,7 +162,7 @@ public class PreparedGetListOfObjectsTest {
         }
 
         @Test
-        public void shouldThrowExceptionIfNoTypeMappingWasFoundWithoutAccessingContentProviderAsObservable() {
+        public void shouldThrowExceptionIfNoTypeMappingWasFoundWithoutAccessingContentProviderAsFlowable() {
             final StorIOContentResolver storIOContentResolver = mock(StorIOContentResolver.class);
             final StorIOContentResolver.LowLevel lowLevel = mock(StorIOContentResolver.LowLevel.class);
 
@@ -167,8 +170,8 @@ public class PreparedGetListOfObjectsTest {
 
             when(storIOContentResolver.get()).thenReturn(new PreparedGet.Builder(storIOContentResolver));
 
-            when(storIOContentResolver.observeChangesOfUri(any(Uri.class)))
-                    .thenReturn(Observable.<Changes>empty());
+            when(storIOContentResolver.observeChangesOfUri(any(Uri.class), eq(BackpressureStrategy.MISSING)))
+                    .thenReturn(Flowable.<Changes>empty());
 
             final TestSubscriber<List<TestItem>> testSubscriber = new TestSubscriber<List<TestItem>>();
 
@@ -177,21 +180,21 @@ public class PreparedGetListOfObjectsTest {
                     .listOfObjects(TestItem.class)
                     .withQuery(Query.builder().uri(mock(Uri.class)).build())
                     .prepare()
-                    .asRxObservable()
+                    .asRxFlowable(BackpressureStrategy.MISSING)
                     .subscribe(testSubscriber);
 
             testSubscriber.awaitTerminalEvent();
             testSubscriber.assertNoValues();
-            assertThat(testSubscriber.getOnErrorEvents().get(0))
+            assertThat(testSubscriber.errors().get(0))
                     .isInstanceOf(StorIOException.class)
                     .hasCauseInstanceOf(IllegalStateException.class);
 
             verify(storIOContentResolver).get();
             verify(storIOContentResolver).lowLevel();
-            verify(storIOContentResolver).defaultScheduler();
+            verify(storIOContentResolver).defaultRxScheduler();
             verify(lowLevel).typeMapping(TestItem.class);
             verify(lowLevel, never()).query(any(Query.class));
-            verify(storIOContentResolver).observeChangesOfUri(any(Uri.class));
+            verify(storIOContentResolver).observeChangesOfUri(any(Uri.class), eq(BackpressureStrategy.MISSING));
 
             verifyNoMoreInteractions(storIOContentResolver, lowLevel);
         }
@@ -205,7 +208,7 @@ public class PreparedGetListOfObjectsTest {
 
             when(storIOContentResolver.get()).thenReturn(new PreparedGet.Builder(storIOContentResolver));
 
-            final TestSubscriber<List<TestItem>> testSubscriber = new TestSubscriber<List<TestItem>>();
+            final TestObserver<List<TestItem>> testObserver = new TestObserver<List<TestItem>>();
 
             storIOContentResolver
                     .get()
@@ -213,11 +216,11 @@ public class PreparedGetListOfObjectsTest {
                     .withQuery(Query.builder().uri(mock(Uri.class)).build())
                     .prepare()
                     .asRxSingle()
-                    .subscribe(testSubscriber);
+                    .subscribe(testObserver);
 
-            testSubscriber.awaitTerminalEvent();
-            testSubscriber.assertNoValues();
-            Throwable error = testSubscriber.getOnErrorEvents().get(0);
+            testObserver.awaitTerminalEvent();
+            testObserver.assertNoValues();
+            Throwable error = testObserver.errors().get(0);
 
             assertThat(error)
                     .isInstanceOf(StorIOException.class)
@@ -230,7 +233,7 @@ public class PreparedGetListOfObjectsTest {
 
             verify(storIOContentResolver).get();
             verify(storIOContentResolver).lowLevel();
-            verify(storIOContentResolver).defaultScheduler();
+            verify(storIOContentResolver).defaultRxScheduler();
             verify(lowLevel).typeMapping(TestItem.class);
             verify(lowLevel, never()).query(any(Query.class));
 
@@ -288,7 +291,7 @@ public class PreparedGetListOfObjectsTest {
         }
 
         @Test
-        public void getListOfObjectsObservableExecutesOnSpecifiedScheduler() {
+        public void getListOfObjectsFlowableExecutesOnSpecifiedScheduler() {
             final GetObjectsStub getStub = GetObjectsStub.newStubWithoutTypeMapping();
             final SchedulerChecker schedulerChecker = SchedulerChecker.create(getStub.storIOContentResolver);
 
@@ -299,7 +302,7 @@ public class PreparedGetListOfObjectsTest {
                     .withGetResolver(getStub.getResolver)
                     .prepare();
 
-            schedulerChecker.checkAsObservable(operation);
+            schedulerChecker.checkAsFlowable(operation);
         }
 
         @Test

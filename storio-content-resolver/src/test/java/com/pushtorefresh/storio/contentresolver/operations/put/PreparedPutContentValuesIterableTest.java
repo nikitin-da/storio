@@ -6,9 +6,10 @@ import com.pushtorefresh.storio.contentresolver.operations.SchedulerChecker;
 
 import org.junit.Test;
 
-import rx.Completable;
-import rx.Observable;
-import rx.Single;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Completable;
+import io.reactivex.Flowable;
+import io.reactivex.Single;
 
 public class PreparedPutContentValuesIterableTest {
 
@@ -27,17 +28,17 @@ public class PreparedPutContentValuesIterableTest {
     }
 
     @Test
-    public void putContentValuesIterableObservable() {
+    public void putContentValuesIterableFlowable() {
         final PutContentValuesStub putStub = PutContentValuesStub.newPutStubForMultipleContentValues();
 
-        final Observable<PutResults<ContentValues>> putResultsObservable = putStub.storIOContentResolver
+        final Flowable<PutResults<ContentValues>> putResultsFlowable = putStub.storIOContentResolver
                 .put()
                 .contentValues(putStub.contentValues)
                 .withPutResolver(putStub.putResolver)
                 .prepare()
-                .asRxObservable();
+                .asRxFlowable(BackpressureStrategy.MISSING);
 
-        putStub.verifyBehaviorForMultipleContentValues(putResultsObservable);
+        putStub.verifyBehaviorForMultipleContentValues(putResultsFlowable);
     }
 
     @Test
@@ -69,7 +70,7 @@ public class PreparedPutContentValuesIterableTest {
     }
 
     @Test
-    public void putContentValuesIterableObservableExecutesOnSpecifiedScheduler() {
+    public void putContentValuesIterableFlowableExecutesOnSpecifiedScheduler() {
         final PutContentValuesStub putStub = PutContentValuesStub.newPutStubForMultipleContentValues();
         final SchedulerChecker schedulerChecker = SchedulerChecker.create(putStub.storIOContentResolver);
 
@@ -79,7 +80,7 @@ public class PreparedPutContentValuesIterableTest {
                 .withPutResolver(putStub.putResolver)
                 .prepare();
 
-        schedulerChecker.checkAsObservable(operation);
+        schedulerChecker.checkAsFlowable(operation);
     }
 
     @Test

@@ -4,9 +4,10 @@ import com.pushtorefresh.storio.contentresolver.operations.SchedulerChecker;
 
 import org.junit.Test;
 
-import rx.Completable;
-import rx.Observable;
-import rx.Single;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Completable;
+import io.reactivex.Flowable;
+import io.reactivex.Single;
 
 public class PreparedDeleteByQueryTest {
 
@@ -25,17 +26,17 @@ public class PreparedDeleteByQueryTest {
     }
 
     @Test
-    public void shouldDeleteByQueryAsObservable() {
+    public void shouldDeleteByQueryAsFlowable() {
         final DeleteByQueryStub deleteStub = DeleteByQueryStub.newInstance();
 
-        final Observable<DeleteResult> deleteResultObservable = deleteStub.storIOContentResolver
+        final Flowable<DeleteResult> deleteResultFlowable = deleteStub.storIOContentResolver
                 .delete()
                 .byQuery(deleteStub.deleteQuery)
                 .withDeleteResolver(deleteStub.deleteResolver)
                 .prepare()
-                .asRxObservable();
+                .asRxFlowable(BackpressureStrategy.MISSING);
 
-        deleteStub.verifyBehavior(deleteResultObservable);
+        deleteStub.verifyBehavior(deleteResultFlowable);
     }
 
     @Test
@@ -67,7 +68,7 @@ public class PreparedDeleteByQueryTest {
     }
 
     @Test
-    public void deleteByQueryObservableExecutesOnSpecifiedScheduler() {
+    public void deleteByQueryFlowableExecutesOnSpecifiedScheduler() {
         final DeleteByQueryStub deleteStub = DeleteByQueryStub.newInstance();
         final SchedulerChecker schedulerChecker = SchedulerChecker.create(deleteStub.storIOContentResolver);
 
@@ -77,7 +78,7 @@ public class PreparedDeleteByQueryTest {
                 .withDeleteResolver(deleteStub.deleteResolver)
                 .prepare();
 
-        schedulerChecker.checkAsObservable(operation);
+        schedulerChecker.checkAsFlowable(operation);
     }
 
     @Test

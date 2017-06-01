@@ -13,7 +13,6 @@ import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 
 import com.pushtorefresh.storio.TypeMappingFinder;
-import com.pushtorefresh.storio.internal.TypeMappingFinderImpl;
 import com.pushtorefresh.storio.contentresolver.Changes;
 import com.pushtorefresh.storio.contentresolver.ContentResolverTypeMapping;
 import com.pushtorefresh.storio.contentresolver.StorIOContentResolver;
@@ -21,17 +20,19 @@ import com.pushtorefresh.storio.contentresolver.queries.DeleteQuery;
 import com.pushtorefresh.storio.contentresolver.queries.InsertQuery;
 import com.pushtorefresh.storio.contentresolver.queries.Query;
 import com.pushtorefresh.storio.contentresolver.queries.UpdateQuery;
+import com.pushtorefresh.storio.internal.TypeMappingFinderImpl;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import rx.Observable;
-import rx.Scheduler;
-import rx.schedulers.Schedulers;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+import io.reactivex.Scheduler;
+import io.reactivex.schedulers.Schedulers;
 
 import static com.pushtorefresh.storio.internal.Checks.checkNotNull;
-import static com.pushtorefresh.storio.internal.Environment.RX_JAVA_IS_IN_THE_CLASS_PATH;
+import static com.pushtorefresh.storio.internal.Environment.RX_JAVA_2_IS_IN_THE_CLASS_PATH;
 import static com.pushtorefresh.storio.internal.Environment.throwExceptionIfRxJava2IsNotAvailable;
 import static com.pushtorefresh.storio.internal.InternalQueries.nullableArrayOfStringsFromListOfStrings;
 import static com.pushtorefresh.storio.internal.InternalQueries.nullableString;
@@ -52,16 +53,16 @@ public class DefaultStorIOContentResolver extends StorIOContentResolver {
     private final Handler contentObserverHandler;
 
     @Nullable
-    private final Scheduler defaultScheduler;
+    private final Scheduler defaultRxScheduler;
 
     protected DefaultStorIOContentResolver(@NonNull ContentResolver contentResolver,
                                            @NonNull Handler contentObserverHandler,
                                            @NonNull TypeMappingFinder typeMappingFinder,
-                                           @Nullable Scheduler defaultScheduler
+                                           @Nullable Scheduler defaultRxScheduler
     ) {
         this.contentResolver = contentResolver;
         this.contentObserverHandler = contentObserverHandler;
-        this.defaultScheduler = defaultScheduler;
+        this.defaultRxScheduler = defaultRxScheduler;
         lowLevel = new LowLevelImpl(typeMappingFinder);
     }
 
@@ -71,20 +72,20 @@ public class DefaultStorIOContentResolver extends StorIOContentResolver {
     @SuppressWarnings("ConstantConditions")
     @NonNull
     @Override
-    public Observable<Changes> observeChangesOfUris(@NonNull final Set<Uri> uris) {
+    public Flowable<Changes> observeChangesOfUris(@NonNull final Set<Uri> uris, @NonNull BackpressureStrategy backpressureStrategy) {
         throwExceptionIfRxJava2IsNotAvailable("Observing changes in StorIOContentProvider");
 
         // indirect usage of RxJava
         // required to avoid problems with ClassLoader when RxJava is not in ClassPath
-        return RxChangesObserver.observeChanges(contentResolver, uris, contentObserverHandler, Build.VERSION.SDK_INT);
+        return RxChangesObserver.observeChanges(contentResolver, uris, contentObserverHandler, Build.VERSION.SDK_INT, backpressureStrategy);
     }
 
     /**
     * {@inheritDoc}
     */
     @Override
-    public Scheduler defaultScheduler() {
-        return defaultScheduler;
+    public Scheduler defaultRxScheduler() {
+        return defaultRxScheduler;
     }
 
     /**
@@ -160,7 +161,7 @@ public class DefaultStorIOContentResolver extends StorIOContentResolver {
         @Nullable
         private TypeMappingFinder typeMappingFinder;
 
-        private Scheduler defaultScheduler = RX_JAVA_IS_IN_THE_CLASS_PATH ? Schedulers.io() : null;
+        private Scheduler defaultRxScheduler = RX_JAVA_2_IS_IN_THE_CLASS_PATH ? Schedulers.io() : null;
 
         CompleteBuilder(@NonNull ContentResolver contentResolver) {
             this.contentResolver = contentResolver;
@@ -216,15 +217,15 @@ public class DefaultStorIOContentResolver extends StorIOContentResolver {
          * Provides a scheduler on which {@link rx.Observable} / {@link rx.Single}
          * or {@link rx.Completable} will be subscribed.
          * <p/>
-         * @see com.pushtorefresh.storio.operations.PreparedOperation#asRxObservable()
+         * @see com.pushtorefresh.storio.operations.PreparedOperation#asRxFlowable(BackpressureStrategy)
          * @see com.pushtorefresh.storio.operations.PreparedOperation#asRxSingle()
          * @see com.pushtorefresh.storio.operations.PreparedWriteOperation#asRxCompletable()
          *
          * @return the scheduler or {@code null} if it isn't needed to apply it.
          */
         @NonNull
-        public CompleteBuilder defaultScheduler(@Nullable Scheduler defaultScheduler) {
-            this.defaultScheduler = defaultScheduler;
+        public CompleteBuilder defaultRxScheduler(@Nullable Scheduler defaultRxScheduler) {
+            this.defaultRxScheduler = defaultRxScheduler;
             return this;
         }
 
@@ -248,7 +249,7 @@ public class DefaultStorIOContentResolver extends StorIOContentResolver {
                 typeMappingFinder.directTypeMapping(unmodifiableMap(typeMapping));
             }
 
-            return new DefaultStorIOContentResolver(contentResolver, contentObserverHandler, typeMappingFinder, defaultScheduler);
+            return new DefaultStorIOContentResolver(contentResolver, contentObserverHandler, typeMappingFinder, defaultRxScheduler);
         }
     }
 

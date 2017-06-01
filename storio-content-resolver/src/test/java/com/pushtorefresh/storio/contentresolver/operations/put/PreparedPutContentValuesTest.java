@@ -4,9 +4,10 @@ import com.pushtorefresh.storio.contentresolver.operations.SchedulerChecker;
 
 import org.junit.Test;
 
-import rx.Completable;
-import rx.Observable;
-import rx.Single;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Completable;
+import io.reactivex.Flowable;
+import io.reactivex.Single;
 
 public class PreparedPutContentValuesTest {
 
@@ -25,17 +26,17 @@ public class PreparedPutContentValuesTest {
     }
 
     @Test
-    public void putContentValuesObservable() {
+    public void putContentValuesFlowable() {
         final PutContentValuesStub putStub = PutContentValuesStub.newPutStubForOneContentValues();
 
-        final Observable<PutResult> putResultObservable = putStub.storIOContentResolver
+        final Flowable<PutResult> putResultFlowable = putStub.storIOContentResolver
                 .put()
                 .contentValues(putStub.contentValues.get(0))
                 .withPutResolver(putStub.putResolver)
                 .prepare()
-                .asRxObservable();
+                .asRxFlowable(BackpressureStrategy.MISSING);
 
-        putStub.verifyBehaviorForOneContentValues(putResultObservable);
+        putStub.verifyBehaviorForOneContentValues(putResultFlowable);
     }
 
     @Test
@@ -67,7 +68,7 @@ public class PreparedPutContentValuesTest {
     }
 
     @Test
-    public void putContentValuesObservableExecutesOnSpecifiedScheduler() {
+    public void putContentValuesFlowableExecutesOnSpecifiedScheduler() {
         final PutContentValuesStub putStub = PutContentValuesStub.newPutStubForOneContentValues();
         final SchedulerChecker schedulerChecker = SchedulerChecker.create(putStub.storIOContentResolver);
 
@@ -77,7 +78,7 @@ public class PreparedPutContentValuesTest {
                 .withPutResolver(putStub.putResolver)
                 .prepare();
 
-        schedulerChecker.checkAsObservable(operation);
+        schedulerChecker.checkAsFlowable(operation);
     }
 
     @Test
